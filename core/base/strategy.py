@@ -16,7 +16,7 @@ class BaseStrategy(ABC):
                 f"{type(self).__name__} does not support io_type={io_type}. "
                 f"Supported: {self.compatible_io_types}"
             )
-        if task and self.compatible_tasks and task not in self.compatible_tasks:
+        if task is not None and self.compatible_tasks and task not in self.compatible_tasks:
             raise ValueError(
                 f"{type(self).__name__} does not support task='{task}'. "
                 f"Supported: {self.compatible_tasks}"

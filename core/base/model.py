@@ -7,6 +7,23 @@ class BaseModel(ABC):
 
     io_type: ClassVar[IOType]
 
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        # ABCMeta sets cls.__abstractmethods__ after __init_subclass__ runs,
+        # so we compute concreteness by walking the MRO ourselves.
+        seen: set[str] = set()
+        remaining_abstract: set[str] = set()
+        for klass in cls.__mro__:
+            for name, val in vars(klass).items():
+                if name not in seen:
+                    seen.add(name)
+                    if getattr(val, "__isabstractmethod__", False):
+                        remaining_abstract.add(name)
+        if not remaining_abstract and not hasattr(cls, "io_type"):
+            raise TypeError(
+                f"{cls.__name__} must define class attribute 'io_type: ClassVar[IOType]'"
+            )
+
     @abstractmethod
     def build(self, config: dict[str, Any]) -> None:
         """Load weights and apply config."""

@@ -115,3 +115,12 @@ def test_strategy_validate_passes_with_empty_compatible_io_types():
         def teardown(self, m): pass
 
     Unrestricted().validate(IOType(DataType.IMAGE, DataType.CATEGORY), "anything")
+
+
+def test_model_without_io_type_raises_on_class_definition():
+    with pytest.raises(TypeError, match="io_type"):
+        class BadModel(BaseModel):
+            def build(self, config): pass
+            def forward(self, batch): return {}
+            def save(self, path): pass
+            def load(self, path): pass
