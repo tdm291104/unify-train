@@ -1,4 +1,3 @@
-import pytest
 from core.base.io_types import DataType, IOType, TEXT_TO_TEXT, IMAGE_TO_CATEGORY, AUDIO_TO_TEXT
 
 
@@ -11,8 +10,11 @@ def test_iotype_inequality():
 
 
 def test_iotype_hashable():
-    io = IOType(DataType.TEXT, DataType.TEXT)
-    assert io in {io}
+    a = IOType(DataType.TEXT, DataType.TEXT)
+    b = IOType(DataType.TEXT, DataType.TEXT)
+    assert a is not b
+    assert hash(a) == hash(b)
+    assert a in {b}
 
 
 def test_iotype_as_dict_key():
@@ -37,3 +39,15 @@ def test_datatype_str_values():
     assert DataType.AUDIO.value == "audio"
     assert DataType.CATEGORY.value == "category"
     assert DataType.TABULAR.value == "tabular"
+
+
+def test_datatype_str_returns_value():
+    # In Python 3.11+, str(Enum) returns "ClassName.member" unless __str__ is overridden
+    assert str(DataType.TEXT) == "text"
+    assert str(DataType.IMAGE) == "image"
+
+
+def test_iotype_rejects_raw_strings():
+    import pytest
+    with pytest.raises(TypeError):
+        IOType("text", "text")
