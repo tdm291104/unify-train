@@ -10,3 +10,4 @@ outputs/
 *.bin
 *.safetensors
 docs/
+.claude/
