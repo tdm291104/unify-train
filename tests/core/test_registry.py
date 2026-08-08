@@ -68,3 +68,16 @@ def test_global_singletons_exist():
     assert DATASETS is not None
     assert STRATEGIES is not None
     assert EVALUATORS is not None
+
+
+def test_register_duplicate_error_names_existing_class():
+    reg = Registry("test")
+
+    @reg.register("baz")
+    class TheOriginalClass:
+        pass
+
+    with pytest.raises(KeyError, match="TheOriginalClass"):
+        @reg.register("baz")
+        class AnotherClass:
+            pass

@@ -1,3 +1,4 @@
+import threading
 from typing import Generic, TypeVar
 
 T = TypeVar("T")
@@ -8,15 +9,17 @@ class Registry(Generic[T]):
     def __init__(self, name: str) -> None:
         self._name = name
         self._registry: dict[str, type[T]] = {}
+        self._lock = threading.Lock()
 
     def register(self, name: str):
         def decorator(cls: type[T]) -> type[T]:
-            if name in self._registry:
-                raise KeyError(
-                    f"'{name}' already registered in Registry('{self._name}'). "
-                    f"Existing: {type(self._registry[name]).__name__}"
-                )
-            self._registry[name] = cls
+            with self._lock:
+                if name in self._registry:
+                    raise KeyError(
+                        f"'{name}' already registered in Registry('{self._name}'). "
+                        f"Existing: {self._registry[name].__name__}"
+                    )
+                self._registry[name] = cls
             return cls
         return decorator
 
