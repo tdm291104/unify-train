@@ -20,6 +20,8 @@ class Trainer:
         config: UnifyTrainConfig,
         evaluator: BaseEvaluator | None = None,
         hooks: HookManager | None = None,
+        start_epoch: int = 0,
+        start_step: int = 0,
     ) -> None:
         self._model = model
         self._dataset = dataset
@@ -27,6 +29,8 @@ class Trainer:
         self._config = config
         self._evaluator = evaluator
         self._hooks = hooks or HookManager()
+        self._start_epoch = start_epoch
+        self._start_step = start_step
         self._io_type = IOType(
             input=DataType(config.io_type.input),
             output=DataType(config.io_type.output),
@@ -51,9 +55,9 @@ class Trainer:
         ctx = HookContext(model=model, config=cfg)
         self._hooks.fire("before_train", ctx)
 
-        global_step = 0
+        global_step = self._start_step
         try:
-            for epoch in range(cfg.train.max_epochs):
+            for epoch in range(self._start_epoch, cfg.train.max_epochs):
                 ctx.epoch = epoch
                 self._hooks.fire("before_epoch", ctx)
 
@@ -88,8 +92,10 @@ class Trainer:
 def build_trainer_from_config(
     config: UnifyTrainConfig,
     hooks: HookManager | None = None,
+    resume: str | None = None,
 ) -> Trainer:
     from core.registry import MODELS, DATASETS, STRATEGIES, EVALUATORS
+    from core.trainer.checkpoint_utils import load_checkpoint
 
     io_type = IOType(
         input=DataType(config.io_type.input),
@@ -99,6 +105,10 @@ def build_trainer_from_config(
     model_cls = MODELS.get(config.model.name)
     model = model_cls()
     model.build({**config.model.params, "io_type": io_type})
+
+    start_epoch, start_step = 0, 0
+    if resume:
+        start_epoch, start_step = load_checkpoint(resume, model)
 
     dataset_cls = DATASETS.get(config.dataset.name)
     dataset = dataset_cls(config.dataset.params)
@@ -118,4 +128,6 @@ def build_trainer_from_config(
         config=config,
         evaluator=evaluator,
         hooks=hooks,
+        start_epoch=start_epoch,
+        start_step=start_step,
     )

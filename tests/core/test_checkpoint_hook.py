@@ -1,3 +1,4 @@
+import json
 import os
 import pytest
 from unittest.mock import MagicMock
@@ -5,8 +6,8 @@ from core.hook.hooks import HookContext
 from core.hook.checkpoint import CheckpointHook
 
 
-def _ctx(epoch: int, model=None) -> HookContext:
-    ctx = HookContext(epoch=epoch)
+def _ctx(epoch: int, step: int = 10, model=None) -> HookContext:
+    ctx = HookContext(epoch=epoch, step=step)
     ctx.model = model or MagicMock()
     return ctx
 
@@ -47,3 +48,20 @@ def test_creates_epoch_subdirectory(tmp_path):
 def test_invalid_every_raises():
     with pytest.raises(ValueError, match="every must be >= 1"):
         CheckpointHook("/tmp", every=0)
+
+
+def test_saves_checkpoint_meta_json(tmp_path):
+    hook = CheckpointHook(str(tmp_path), every=1)
+    hook(_ctx(epoch=0, step=42))
+    meta_path = tmp_path / "epoch_1" / "checkpoint_meta.json"
+    assert meta_path.exists()
+    meta = json.loads(meta_path.read_text())
+    assert meta["epoch"] == 1
+    assert meta["step"] == 42
+
+
+def test_meta_epoch_reflects_completed_epoch(tmp_path):
+    hook = CheckpointHook(str(tmp_path), every=1)
+    hook(_ctx(epoch=2, step=99))
+    meta = json.loads((tmp_path / "epoch_3" / "checkpoint_meta.json").read_text())
+    assert meta["epoch"] == 3

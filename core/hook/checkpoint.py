@@ -1,3 +1,4 @@
+import json
 import os
 from core.hook.hooks import HookContext
 
@@ -17,3 +18,5 @@ class CheckpointHook:
         epoch_dir = os.path.join(self._dir, f"epoch_{ctx.epoch + 1}")
         os.makedirs(epoch_dir, exist_ok=True)
         ctx.model.save(epoch_dir)
+        with open(os.path.join(epoch_dir, "checkpoint_meta.json"), "w") as f:
+            json.dump({"epoch": ctx.epoch + 1, "step": ctx.step}, f)
