@@ -39,6 +39,7 @@ class Trainer:
 
         model = self._strategy.setup(self._model, cfg.strategy.params)
         optimizer = self._strategy.configure_optimizers(model, cfg.strategy.params)
+        scheduler = self._strategy.configure_scheduler(optimizer, cfg.strategy.params)
 
         loader = DataLoader(
             self._dataset,
@@ -72,6 +73,8 @@ class Trainer:
                     self._hooks.fire("after_step", ctx)
 
                 self._hooks.fire("after_epoch", ctx)
+                if scheduler is not None:
+                    scheduler.step()
         except StopTraining:
             pass
 

@@ -30,6 +30,10 @@ class BaseStrategy(ABC):
     def configure_optimizers(self, model: BaseModel, config: dict[str, Any]) -> Any:
         """Create and return the optimizer appropriate for this strategy."""
 
+    def configure_scheduler(self, optimizer: Any, config: dict[str, Any]) -> Any | None:
+        """Optionally return an LR scheduler stepped after each epoch. Default: None."""
+        return None
+
     @abstractmethod
     def training_step(
         self,
