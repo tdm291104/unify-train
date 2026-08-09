@@ -1,0 +1,66 @@
+model:
+  name: distilgpt2
+  params:
+    pretrained: distilgpt2
+
+dataset:
+  name: text_clm
+  params:
+    pretrained: distilgpt2
+    max_length: 64
+    texts:
+      - "The quick brown fox jumps over the lazy dog."
+      - "Machine learning is a subset of artificial intelligence."
+      - "Neural networks are inspired by the human brain."
+      - "Transformers revolutionized natural language processing."
+      - "Fine-tuning pretrained models saves time and compute."
+      - "LoRA reduces trainable parameters by injecting low-rank matrices."
+      - "Gradient descent minimizes the loss function iteratively."
+      - "Backpropagation computes gradients through the network."
+      - "Attention mechanisms allow models to focus on relevant tokens."
+      - "Tokenization splits text into smaller units for processing."
+      - "Embeddings map tokens to dense vector representations."
+      - "Perplexity measures how well a language model predicts text."
+      - "Overfitting occurs when a model memorizes training data."
+      - "Regularization techniques help prevent overfitting."
+      - "Batch normalization stabilizes training of deep networks."
+      - "Dropout randomly deactivates neurons during training."
+      - "Learning rate schedules adjust the step size during training."
+      - "Mixed precision training reduces memory usage and speeds up training."
+      - "Checkpointing saves model state to resume interrupted training."
+      - "Evaluation metrics quantify model performance on held-out data."
+      - "Data augmentation artificially increases the size of training sets."
+      - "Transfer learning leverages knowledge from pretrained models."
+      - "Zero-shot learning generalizes to unseen tasks without examples."
+      - "Few-shot learning adapts to new tasks with minimal examples."
+      - "Prompt engineering shapes model behavior through input design."
+      - "RLHF aligns language models with human preferences."
+      - "Quantization reduces model size by lowering numerical precision."
+      - "Pruning removes unimportant weights to compress models."
+      - "Knowledge distillation trains small models to mimic larger ones."
+      - "Benchmarks measure and compare model capabilities systematically."
+
+strategy:
+  name: lora
+  params:
+    r: 4
+    lora_alpha: 8
+    lora_dropout: 0.05
+    lr: 3e-4
+
+evaluator:
+  name: perplexity
+
+io_type:
+  input: text
+  output: text
+
+task: null
+
+train:
+  max_epochs: 2
+  batch_size: 4
+  gradient_accumulation_steps: 1
+  log_every_n_steps: 5
+
+output_dir: outputs/llm_lora_example
