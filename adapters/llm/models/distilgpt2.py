@@ -35,6 +35,7 @@ class DistilGPT2Model(BaseModel):
     def load(self, path: str) -> None:
         self._model = AutoModelForCausalLM.from_pretrained(path)
         self._tokenizer = AutoTokenizer.from_pretrained(path)
+        self._tokenizer.pad_token = self._tokenizer.eos_token
 
     @property
     def raw_model(self):
