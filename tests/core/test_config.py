@@ -1,5 +1,6 @@
 import pytest
 import yaml
+from pydantic import ValidationError
 from core.config.schema import UnifyTrainConfig
 from core.config.loader import load_config
 
@@ -24,13 +25,13 @@ def test_valid_config_parses():
 
 def test_invalid_io_type_input_raises():
     bad = {**VALID_DICT, "io_type": {"input": "not_a_type", "output": "text"}}
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         UnifyTrainConfig(**bad)
 
 
 def test_invalid_io_type_output_raises():
     bad = {**VALID_DICT, "io_type": {"input": "text", "output": "not_a_type"}}
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         UnifyTrainConfig(**bad)
 
 
@@ -67,3 +68,10 @@ def test_load_config_from_yaml(tmp_path):
 def test_load_config_missing_file_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
         load_config(str(tmp_path / "nonexistent.yaml"))
+
+
+def test_load_config_empty_yaml_raises(tmp_path):
+    f = tmp_path / "empty.yaml"
+    f.write_text("")
+    with pytest.raises(ValueError, match="YAML mapping"):
+        load_config(str(f))
