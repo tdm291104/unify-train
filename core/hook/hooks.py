@@ -27,5 +27,7 @@ class HookManager:
         self._hooks[event].append(fn)
 
     def fire(self, event: str, ctx: HookContext) -> None:
+        if event not in VALID_EVENTS:
+            raise ValueError(f"Unknown hook event: '{event}'. Valid: {sorted(VALID_EVENTS)}")
         for fn in self._hooks[event]:
             fn(ctx)
