@@ -2,7 +2,8 @@
 import argparse
 import logging
 
-import adapters.llm  # noqa: F401 — triggers all adapter registrations
+import adapters.llm  # noqa: F401
+import adapters.vision  # noqa: F401
 
 from core.config.loader import load_config
 from core.hook.hooks import HookManager
