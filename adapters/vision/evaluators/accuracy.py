@@ -9,6 +9,15 @@ class AccuracyEvaluator(BaseEvaluator):
 
     io_type = IMAGE_TO_CATEGORY
 
+    def extract(
+        self,
+        model_output: dict[str, Any],
+        batch: dict[str, Any],
+    ) -> tuple[list[Any], list[Any]]:
+        preds = model_output["logits"].argmax(dim=-1).tolist()
+        refs = batch["labels"].tolist()
+        return preds, refs
+
     def compute(
         self,
         predictions: list[Any],

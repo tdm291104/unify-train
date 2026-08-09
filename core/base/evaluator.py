@@ -25,6 +25,14 @@ class BaseEvaluator(ABC):
             )
 
     @abstractmethod
+    def extract(
+        self,
+        model_output: dict[str, Any],
+        batch: dict[str, Any],
+    ) -> tuple[list[Any], list[Any]]:
+        """Extract (predictions, references) from a single batch's model output."""
+
+    @abstractmethod
     def compute(
         self,
         predictions: list[Any],

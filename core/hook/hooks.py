@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-VALID_EVENTS = frozenset(["before_train", "after_train", "before_epoch", "after_epoch", "after_step"])
+VALID_EVENTS = frozenset(["before_train", "after_train", "before_epoch", "after_epoch", "after_step", "after_eval"])
 
 
 @dataclass

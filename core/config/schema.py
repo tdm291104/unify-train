@@ -40,12 +40,18 @@ class TrainConfig(PydanticBase):
     log_every_n_steps: int = 10
 
 
+class EvalConfig(PydanticBase):
+    eval_every_n_epochs: int = 1
+
+
 class UnifyTrainConfig(PydanticBase):
     model: ModelConfig
     dataset: DatasetConfig
     strategy: StrategyConfig
     evaluator: EvaluatorConfig | None = None
+    eval_dataset: DatasetConfig | None = None
     io_type: IOTypeConfig
     task: str | None = None
     train: TrainConfig = TrainConfig()
+    eval: EvalConfig = EvalConfig()
     output_dir: str = "outputs/"

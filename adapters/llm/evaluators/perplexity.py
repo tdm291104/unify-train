@@ -10,6 +10,13 @@ class PerplexityEvaluator(BaseEvaluator):
 
     io_type = TEXT_TO_TEXT
 
+    def extract(
+        self,
+        model_output: dict[str, Any],
+        batch: dict[str, Any],
+    ) -> tuple[list[Any], list[Any]]:
+        return [model_output["loss"].item()], []
+
     def compute(
         self,
         predictions: list[Any],

@@ -34,6 +34,7 @@ class ConcreteStrategy(BaseStrategy):
 
 class ConcreteEvaluator(BaseEvaluator):
     io_type = TEXT_TO_TEXT
+    def extract(self, model_output, batch): return [], []
     def compute(self, predictions, references): return {"metric": 0.0}
 
 

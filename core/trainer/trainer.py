@@ -1,4 +1,5 @@
 import os
+import torch
 from torch.utils.data import DataLoader
 from core.base.model import BaseModel
 from core.base.dataset import BaseDataset
@@ -19,6 +20,7 @@ class Trainer:
         strategy: BaseStrategy,
         config: UnifyTrainConfig,
         evaluator: BaseEvaluator | None = None,
+        eval_dataset: BaseDataset | None = None,
         hooks: HookManager | None = None,
         start_epoch: int = 0,
         start_step: int = 0,
@@ -28,6 +30,7 @@ class Trainer:
         self._strategy = strategy
         self._config = config
         self._evaluator = evaluator
+        self._eval_dataset = eval_dataset
         self._hooks = hooks or HookManager()
         self._start_epoch = start_epoch
         self._start_step = start_step
@@ -35,6 +38,33 @@ class Trainer:
             input=DataType(config.io_type.input),
             output=DataType(config.io_type.output),
         )
+
+    def _run_eval(self, model: BaseModel, epoch: int, ctx: HookContext) -> None:
+        if self._evaluator is None or self._eval_dataset is None:
+            return
+        if (epoch + 1) % self._config.eval.eval_every_n_epochs != 0:
+            return
+
+        model.raw_model.eval()
+        loader = DataLoader(
+            self._eval_dataset,
+            batch_size=self._config.train.batch_size,
+            collate_fn=self._eval_dataset.collate_fn,
+            shuffle=False,
+        )
+        all_preds: list = []
+        all_refs: list = []
+        with torch.no_grad():
+            for batch in loader:
+                out = model.forward(batch)
+                preds, refs = self._evaluator.extract(out, batch)
+                all_preds.extend(preds)
+                all_refs.extend(refs)
+
+        eval_metrics = self._evaluator.compute(all_preds, all_refs)
+        ctx.metrics = {**ctx.metrics, **eval_metrics}
+        model.raw_model.train()
+        self._hooks.fire("after_eval", ctx)
 
     def run(self) -> None:
         cfg = self._config
@@ -77,6 +107,7 @@ class Trainer:
                     self._hooks.fire("after_step", ctx)
 
                 self._hooks.fire("after_epoch", ctx)
+                self._run_eval(model, epoch, ctx)
                 if scheduler is not None:
                     scheduler.step()
         except StopTraining:
@@ -121,12 +152,18 @@ def build_trainer_from_config(
         evaluator_cls = EVALUATORS.get(config.evaluator.name)
         evaluator = evaluator_cls()
 
+    eval_dataset = None
+    if config.eval_dataset:
+        eval_dataset_cls = DATASETS.get(config.eval_dataset.name)
+        eval_dataset = eval_dataset_cls(config.eval_dataset.params)
+
     return Trainer(
         model=model,
         dataset=dataset,
         strategy=strategy,
         config=config,
         evaluator=evaluator,
+        eval_dataset=eval_dataset,
         hooks=hooks,
         start_epoch=start_epoch,
         start_step=start_step,
