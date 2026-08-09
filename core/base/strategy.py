@@ -39,10 +39,9 @@ class BaseStrategy(ABC):
         self,
         model: BaseModel,
         batch: dict[str, Any],
-        optimizer: Any,
         step: int,
-    ) -> dict[str, float]:
-        """Single optimization step. Must return dict with 'loss': float."""
+    ) -> dict[str, Any]:
+        """Forward pass only. Must return dict with 'loss': Tensor (no backward, no optimizer calls)."""
 
     @abstractmethod
     def teardown(self, model: BaseModel) -> None:

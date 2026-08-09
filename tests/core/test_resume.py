@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+import torch
 from unittest.mock import MagicMock, patch
 from core.trainer.checkpoint_utils import load_checkpoint
 
@@ -49,9 +50,9 @@ def test_trainer_starts_from_start_epoch():
     strategy.configure_scheduler.return_value = None
 
     epochs_seen = []
-    def training_step(model, batch, optimizer, step):
+    def training_step(model, batch, step):
         epochs_seen.append(step)
-        return {"loss": 0.1}
+        return {"loss": torch.tensor(0.1, requires_grad=True)}
     strategy.training_step.side_effect = training_step
 
     config = UnifyTrainConfig(
@@ -88,9 +89,9 @@ def test_trainer_global_step_continues_from_start_step():
     strategy.configure_scheduler.return_value = None
 
     steps_seen = []
-    def training_step(model, batch, optimizer, step):
+    def training_step(model, batch, step):
         steps_seen.append(step)
-        return {"loss": 0.1}
+        return {"loss": torch.tensor(0.1, requires_grad=True)}
     strategy.training_step.side_effect = training_step
 
     config = UnifyTrainConfig(

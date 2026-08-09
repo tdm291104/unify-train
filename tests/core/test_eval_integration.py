@@ -11,7 +11,7 @@ def _make_strategy(loss_val=0.5):
     strategy.setup.return_value = MagicMock()
     strategy.configure_optimizers.return_value = MagicMock()
     strategy.configure_scheduler.return_value = None
-    strategy.training_step.return_value = {"loss": loss_val}
+    strategy.training_step.return_value = {"loss": torch.tensor(loss_val, requires_grad=True)}
     return strategy
 
 
@@ -185,7 +185,7 @@ def test_eval_runs_with_no_grad():
 
     strategy = _make_strategy()
     strategy.setup.return_value = model
-    strategy.training_step.return_value = {"loss": 0.5}
+    strategy.training_step.return_value = {"loss": torch.tensor(0.5, requires_grad=True)}
 
     with patch("core.trainer.trainer.DataLoader") as MockDL:
         MockDL.return_value = [[{}]]

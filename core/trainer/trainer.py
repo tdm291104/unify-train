@@ -1,4 +1,5 @@
 import os
+from typing import Any
 import torch
 from torch.utils.data import DataLoader
 from core.base.model import BaseModel
@@ -66,6 +67,28 @@ class Trainer:
         model.raw_model.train()
         self._hooks.fire("after_eval", ctx)
 
+    @staticmethod
+    def _detach_metrics(metrics: dict) -> dict:
+        return {k: v.item() if isinstance(v, torch.Tensor) else v for k, v in metrics.items()}
+
+    def _do_optimizer_step(
+        self,
+        optimizer: Any,
+        model: BaseModel,
+        max_grad_norm: float,
+        scaler: Any,
+        use_fp16: bool,
+    ) -> None:
+        if max_grad_norm > 0.0:
+            if use_fp16:
+                scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.raw_model.parameters(), max_grad_norm)
+        if use_fp16:
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            optimizer.step()
+
     def run(self) -> None:
         cfg = self._config
 
@@ -82,28 +105,66 @@ class Trainer:
             shuffle=True,
         )
 
+        accum_steps = max(1, cfg.train.gradient_accumulation_steps)
+        use_fp16 = cfg.train.fp16
+        use_amp = use_fp16 or cfg.train.bf16
+        amp_dtype = torch.bfloat16 if cfg.train.bf16 else torch.float16
+        device_type = "cuda" if torch.cuda.is_available() else "cpu"
+        scaler = torch.amp.GradScaler("cuda", enabled=use_fp16)
+
         ctx = HookContext(model=model, config=cfg)
         self._hooks.fire("before_train", ctx)
 
         global_step = self._start_step
+        last_metrics: dict = {}
+
         try:
             for epoch in range(self._start_epoch, cfg.train.max_epochs):
                 ctx.epoch = epoch
                 self._hooks.fire("before_epoch", ctx)
 
-                for batch in loader:
-                    metrics = self._strategy.training_step(
-                        model, batch, optimizer, step=global_step
-                    )
+                optimizer.zero_grad()
+                pending_step = False
+
+                for batch_idx, batch in enumerate(loader):
+                    with torch.autocast(device_type=device_type, dtype=amp_dtype, enabled=use_amp):
+                        metrics = self._strategy.training_step(model, batch, global_step)
+
                     if "loss" not in metrics:
                         raise ValueError(
                             f"{type(self._strategy).__name__}.training_step must return a dict "
                             f"with 'loss' key, got keys: {list(metrics)}"
                         )
+
+                    last_metrics = metrics
+                    loss: torch.Tensor = metrics["loss"]
+                    scaled = loss / accum_steps
+
+                    if use_fp16:
+                        scaler.scale(scaled).backward()
+                    else:
+                        scaled.backward()
+
+                    pending_step = True
+
+                    if (batch_idx + 1) % accum_steps == 0:
+                        self._do_optimizer_step(optimizer, model, cfg.train.max_grad_norm, scaler, use_fp16)
+                        optimizer.zero_grad()
+                        pending_step = False
+                        global_step += 1
+                        ctx.step = global_step
+                        ctx.loss = loss.item()
+                        ctx.metrics = self._detach_metrics(metrics)
+                        self._hooks.fire("after_step", ctx)
+
+                if pending_step:
+                    self._do_optimizer_step(optimizer, model, cfg.train.max_grad_norm, scaler, use_fp16)
+                    optimizer.zero_grad()
                     global_step += 1
+                    loss = last_metrics["loss"]
                     ctx.step = global_step
-                    ctx.loss = metrics["loss"]
-                    ctx.metrics = metrics
+                    ctx.loss = loss.item() if isinstance(loss, torch.Tensor) else float(loss)
+                    ctx.metrics = self._detach_metrics(last_metrics)
                     self._hooks.fire("after_step", ctx)
 
                 self._hooks.fire("after_epoch", ctx)

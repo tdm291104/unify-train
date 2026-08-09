@@ -78,7 +78,7 @@ def test_configure_optimizers_returns_adamw():
     assert isinstance(opt, AdamW)
 
 
-def test_training_step_returns_loss():
+def test_training_step_returns_loss_tensor():
     from adapters.llm.strategies.dpo import DPOStrategy
     strategy = DPOStrategy()
     strategy._ref_model = MagicMock()
@@ -89,28 +89,9 @@ def test_training_step_returns_loss():
     strategy._ref_model.return_value = ref_out
 
     model = _make_model(batch_size=1, seq_len=4, vocab_size=100)
-    optimizer = MagicMock()
-
-    result = strategy.training_step(model, _make_batch(1, 4), optimizer, step=0)
+    result = strategy.training_step(model, _make_batch(1, 4), step=0)
     assert "loss" in result
-    assert isinstance(result["loss"], float)
-
-
-def test_training_step_calls_optimizer():
-    from adapters.llm.strategies.dpo import DPOStrategy
-    strategy = DPOStrategy()
-    strategy._ref_model = MagicMock()
-    strategy._beta = 0.1
-
-    ref_out = MagicMock()
-    ref_out.logits = _make_logits(1, 4, 100).detach()
-    strategy._ref_model.return_value = ref_out
-
-    optimizer = MagicMock()
-    model = _make_model(batch_size=1, seq_len=4, vocab_size=100)
-    strategy.training_step(model, _make_batch(1, 4), optimizer, step=0)
-    optimizer.zero_grad.assert_called_once()
-    optimizer.step.assert_called_once()
+    assert isinstance(result["loss"], torch.Tensor)
 
 
 def test_teardown_merges_and_cleans_ref():
@@ -171,9 +152,8 @@ def test_dpo_loss_formula():
         "rejected": {"input_ids": labels.clone(), "attention_mask": torch.ones(B, T, dtype=torch.long), "labels": labels.clone()},
     }
 
-    optimizer = MagicMock()
-    result = strategy.training_step(model, batch, optimizer, step=0)
+    result = strategy.training_step(model, batch, step=0)
 
     import math
     expected = math.log(2)
-    assert abs(result["loss"] - expected) < 1e-4
+    assert abs(result["loss"].item() - expected) < 1e-4

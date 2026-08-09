@@ -52,22 +52,13 @@ def test_configure_optimizers_returns_adamw():
     assert isinstance(opt, AdamW)
 
 
-def test_training_step_returns_loss():
+def test_training_step_returns_loss_tensor():
     from adapters.llm.strategies.sft import SFTStrategy
     model = _make_mock_model(loss_val=2.0)
-    optimizer = MagicMock()
-    result = SFTStrategy().training_step(model, {}, optimizer, step=0)
+    result = SFTStrategy().training_step(model, {}, step=0)
     assert "loss" in result
-    assert abs(result["loss"] - 2.0) < 1e-5
-
-
-def test_training_step_calls_optimizer():
-    from adapters.llm.strategies.sft import SFTStrategy
-    model = _make_mock_model()
-    optimizer = MagicMock()
-    SFTStrategy().training_step(model, {}, optimizer, step=0)
-    optimizer.zero_grad.assert_called_once()
-    optimizer.step.assert_called_once()
+    assert isinstance(result["loss"], torch.Tensor)
+    assert abs(result["loss"].item() - 2.0) < 1e-5
 
 
 def test_teardown_is_noop():

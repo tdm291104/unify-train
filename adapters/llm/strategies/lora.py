@@ -34,15 +34,10 @@ class LoRAStrategy(BaseStrategy):
         self,
         model: BaseModel,
         batch: dict[str, Any],
-        optimizer: Any,
         step: int,
-    ) -> dict[str, float]:
-        optimizer.zero_grad()
+    ) -> dict[str, Any]:
         out = model.forward(batch)
-        loss: torch.Tensor = out["loss"]
-        loss.backward()
-        optimizer.step()
-        return {"loss": loss.item()}
+        return {"loss": out["loss"]}
 
     def configure_scheduler(self, optimizer: Any, config: dict[str, Any]) -> Any | None:
         name = config.get("scheduler")

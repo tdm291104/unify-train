@@ -38,6 +38,9 @@ class TrainConfig(PydanticBase):
     batch_size: int = 4
     gradient_accumulation_steps: int = 1
     log_every_n_steps: int = 10
+    fp16: bool = False
+    bf16: bool = False
+    max_grad_norm: float = 0.0
 
 
 class EvalConfig(PydanticBase):

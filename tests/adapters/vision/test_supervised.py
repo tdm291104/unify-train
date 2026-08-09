@@ -40,23 +40,13 @@ def test_configure_optimizers_returns_sgd():
     assert isinstance(opt, SGD)
 
 
-def test_training_step_returns_loss():
+def test_training_step_returns_loss_tensor():
     from adapters.vision.strategies.supervised import SupervisedStrategy
     model = _make_mock_model(loss_val=0.8)
-    optimizer = MagicMock()
-    result = SupervisedStrategy().training_step(model, {}, optimizer, step=0)
+    result = SupervisedStrategy().training_step(model, {}, step=0)
     assert "loss" in result
-    assert isinstance(result["loss"], float)
-    assert abs(result["loss"] - 0.8) < 1e-5
-
-
-def test_training_step_calls_optimizer():
-    from adapters.vision.strategies.supervised import SupervisedStrategy
-    model = _make_mock_model()
-    optimizer = MagicMock()
-    SupervisedStrategy().training_step(model, {}, optimizer, step=3)
-    optimizer.zero_grad.assert_called_once()
-    optimizer.step.assert_called_once()
+    assert isinstance(result["loss"], torch.Tensor)
+    assert abs(result["loss"].item() - 0.8) < 1e-5
 
 
 def test_teardown_is_noop():

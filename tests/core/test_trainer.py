@@ -1,5 +1,6 @@
 import pytest
 import os
+import torch
 from unittest.mock import MagicMock, patch
 from core.trainer.trainer import Trainer, build_trainer_from_config
 from core.hook.hooks import HookManager, HookContext
@@ -24,7 +25,9 @@ def _make_strategy(training_step_return=None):
     s = MagicMock()
     s.setup = MagicMock(side_effect=lambda m, c: m)
     s.configure_optimizers = MagicMock(return_value=MagicMock())
-    s.training_step = MagicMock(return_value=training_step_return or {"loss": 0.1})
+    s.training_step = MagicMock(
+        return_value=training_step_return or {"loss": torch.tensor(0.1, requires_grad=True)}
+    )
     s.teardown = MagicMock()
     s.validate = MagicMock()
     return s
@@ -75,7 +78,7 @@ def test_trainer_calls_lifecycle_in_order():
     strategy.configure_optimizers = MagicMock(
         side_effect=lambda m, c: (order.append("configure_optimizers"), MagicMock())[1]
     )
-    strategy.training_step = MagicMock(return_value={"loss": 0.1})
+    strategy.training_step = MagicMock(return_value={"loss": torch.tensor(0.1, requires_grad=True)})
     strategy.teardown = MagicMock(side_effect=lambda m: order.append("teardown"))
 
     hooks = HookManager()
@@ -105,7 +108,7 @@ def test_trainer_hooks_fire_after_each_step():
     step_losses = []
     hooks = HookManager()
     hooks.register("after_step", lambda ctx: step_losses.append(ctx.loss))
-    strategy = _make_strategy({"loss": 0.5})
+    strategy = _make_strategy({"loss": torch.tensor(0.5, requires_grad=True)})
 
     with patch("core.trainer.trainer.DataLoader") as MockDL:
         with patch("os.makedirs"):

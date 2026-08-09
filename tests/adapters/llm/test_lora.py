@@ -62,26 +62,14 @@ def test_configure_optimizers_returns_adamw():
     assert isinstance(opt, AdamW)
 
 
-def test_training_step_returns_loss():
+def test_training_step_returns_loss_tensor():
     from adapters.llm.strategies.lora import LoRAStrategy
 
     mock_model = _make_mock_model(loss_val=2.5)
-    strat = LoRAStrategy()
-    optimizer = MagicMock()
-    result = strat.training_step(mock_model, {"input_ids": torch.tensor([[1]])}, optimizer, step=0)
+    result = LoRAStrategy().training_step(mock_model, {"input_ids": torch.tensor([[1]])}, step=0)
     assert "loss" in result
-    assert isinstance(result["loss"], float)
-    assert abs(result["loss"] - 2.5) < 1e-5
-
-
-def test_training_step_calls_optimizer():
-    from adapters.llm.strategies.lora import LoRAStrategy
-
-    mock_model = _make_mock_model()
-    optimizer = MagicMock()
-    LoRAStrategy().training_step(mock_model, {}, optimizer, step=5)
-    optimizer.zero_grad.assert_called_once()
-    optimizer.step.assert_called_once()
+    assert isinstance(result["loss"], torch.Tensor)
+    assert abs(result["loss"].item() - 2.5) < 1e-5
 
 
 def test_teardown_calls_merge_and_unload():

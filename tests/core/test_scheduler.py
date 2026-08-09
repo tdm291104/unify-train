@@ -9,7 +9,7 @@ class _ConcreteStrategy(BaseStrategy):
 
     def setup(self, model, config): return model
     def configure_optimizers(self, model, config): return MagicMock()
-    def training_step(self, model, batch, optimizer, step): return {"loss": 0.0}
+    def training_step(self, model, batch, step): return {"loss": torch.tensor(0.0)}
     def teardown(self, model): pass
 
 
@@ -30,7 +30,7 @@ def test_trainer_calls_configure_scheduler():
     strategy.configure_optimizers.return_value = MagicMock()
     mock_scheduler = MagicMock()
     strategy.configure_scheduler.return_value = mock_scheduler
-    strategy.training_step.return_value = {"loss": 0.5}
+    strategy.training_step.return_value = {"loss": torch.tensor(0.5, requires_grad=True)}
 
     dataset = MagicMock()
     dataset.__len__ = MagicMock(return_value=2)
@@ -66,7 +66,7 @@ def test_trainer_skips_scheduler_step_when_none():
     strategy.setup.return_value = MagicMock()
     strategy.configure_optimizers.return_value = MagicMock()
     strategy.configure_scheduler.return_value = None
-    strategy.training_step.return_value = {"loss": 0.1}
+    strategy.training_step.return_value = {"loss": torch.tensor(0.1, requires_grad=True)}
 
     config = UnifyTrainConfig(
         model={"name": "m"},

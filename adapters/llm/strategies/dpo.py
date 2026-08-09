@@ -66,45 +66,34 @@ class DPOStrategy(BaseStrategy):
         self,
         model: BaseModel,
         batch: dict[str, Any],
-        optimizer: Any,
         step: int,
-    ) -> dict[str, float]:
+    ) -> dict[str, Any]:
         chosen = batch["chosen"]
         rejected = batch["rejected"]
 
-        optimizer.zero_grad()
-
         # Policy log-probs
         chosen_out = model.forward(chosen)
-        chosen_logits = chosen_out["logits"]
-        policy_chosen_lp = self._log_probs(chosen_logits, chosen["labels"])
+        policy_chosen_lp = self._log_probs(chosen_out["logits"], chosen["labels"])
 
         rejected_out = model.forward(rejected)
-        rejected_logits = rejected_out["logits"]
-        policy_rejected_lp = self._log_probs(rejected_logits, rejected["labels"])
+        policy_rejected_lp = self._log_probs(rejected_out["logits"], rejected["labels"])
 
         # Reference log-probs (no grad)
         with torch.no_grad():
-            ref_chosen_logits = self._ref_model(
-                input_ids=chosen["input_ids"],
-                attention_mask=chosen["attention_mask"],
-            ).logits
-            ref_chosen_lp = self._log_probs(ref_chosen_logits, chosen["labels"])
-
-            ref_rejected_logits = self._ref_model(
-                input_ids=rejected["input_ids"],
-                attention_mask=rejected["attention_mask"],
-            ).logits
-            ref_rejected_lp = self._log_probs(ref_rejected_logits, rejected["labels"])
+            ref_chosen_lp = self._log_probs(
+                self._ref_model(input_ids=chosen["input_ids"], attention_mask=chosen["attention_mask"]).logits,
+                chosen["labels"],
+            )
+            ref_rejected_lp = self._log_probs(
+                self._ref_model(input_ids=rejected["input_ids"], attention_mask=rejected["attention_mask"]).logits,
+                rejected["labels"],
+            )
 
         # DPO loss
         ratio_chosen = policy_chosen_lp - ref_chosen_lp
         ratio_rejected = policy_rejected_lp - ref_rejected_lp
         loss = -F.logsigmoid(self._beta * (ratio_chosen - ratio_rejected)).mean()
-
-        loss.backward()
-        optimizer.step()
-        return {"loss": loss.item()}
+        return {"loss": loss}
 
     def teardown(self, model: BaseModel) -> None:
         merged = model.raw_model.merge_and_unload()
