@@ -27,7 +27,7 @@ class LoRAStrategy(BaseStrategy):
         return model
 
     def configure_optimizers(self, model: BaseModel, config: dict[str, Any]) -> AdamW:
-        lr = config.get("lr", 3e-4)
+        lr = float(config.get("lr", 3e-4))
         return AdamW(filter(lambda p: p.requires_grad, model.raw_model.parameters()), lr=lr)
 
     def training_step(
