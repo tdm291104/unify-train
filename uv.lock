@@ -2644,6 +2644,7 @@ name = "unify-train"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "click" },
     { name = "datasets" },
     { name = "peft" },
     { name = "pydantic" },
@@ -2661,6 +2662,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click", specifier = ">=8.0" },
     { name = "datasets", specifier = ">=5.0.1" },
     { name = "peft", specifier = ">=0.10.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
