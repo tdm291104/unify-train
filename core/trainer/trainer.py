@@ -58,6 +58,11 @@ class Trainer:
                 metrics = self._strategy.training_step(
                     model, batch, optimizer, step=global_step
                 )
+                if "loss" not in metrics:
+                    raise ValueError(
+                        f"{type(self._strategy).__name__}.training_step must return a dict "
+                        f"with 'loss' key, got keys: {list(metrics)}"
+                    )
                 global_step += 1
                 ctx.step = global_step
                 ctx.loss = metrics["loss"]

@@ -44,7 +44,7 @@ class UnifyTrainConfig(PydanticBase):
     model: ModelConfig
     dataset: DatasetConfig
     strategy: StrategyConfig
-    evaluator: EvaluatorConfig
+    evaluator: EvaluatorConfig | None = None
     io_type: IOTypeConfig
     task: str | None = None
     train: TrainConfig = TrainConfig()
