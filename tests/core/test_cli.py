@@ -86,3 +86,21 @@ def test_train_no_checkpoint_flag(tmp_path):
     with patch("core.trainer.trainer.build_trainer_from_config", return_value=mock_trainer):
         result = CliRunner().invoke(main, ["train", str(cfg_file), "--no-checkpoint"])
     assert mock_trainer.run.called
+
+
+def test_train_resume_flag(tmp_path):
+    cfg_file = _write_config(tmp_path)
+    ckpt_dir = tmp_path / "ckpt"
+    ckpt_dir.mkdir()
+    mock_trainer = MagicMock()
+    with patch("core.trainer.trainer.build_trainer_from_config", return_value=mock_trainer) as mock_build:
+        result = CliRunner().invoke(main, ["train", str(cfg_file), "--resume", str(ckpt_dir)])
+    assert mock_trainer.run.called
+    call_kwargs = mock_build.call_args.kwargs
+    assert call_kwargs.get("resume") == str(ckpt_dir)
+
+
+def test_train_resume_nonexistent_dir_fails(tmp_path):
+    cfg_file = _write_config(tmp_path)
+    result = CliRunner().invoke(main, ["train", str(cfg_file), "--resume", "/nonexistent/ckpt"])
+    assert result.exit_code != 0

@@ -21,12 +21,15 @@ def main() -> None:
               help="Stop after N epochs with no improvement (0 = disabled).")
 @click.option("--early-stopping-delta", default=0.0, show_default=True,
               help="Minimum loss improvement to count as progress.")
+@click.option("--resume", default=None, type=click.Path(exists=True, file_okay=False),
+              help="Resume from a checkpoint directory.")
 def train(
     config: str,
     checkpoint_every: int,
     no_checkpoint: bool,
     early_stopping_patience: int,
     early_stopping_delta: float,
+    resume: str | None,
 ) -> None:
     """Run training from a YAML config file."""
     import adapters.llm  # noqa: F401
@@ -60,7 +63,10 @@ def train(
             min_delta=early_stopping_delta,
         ))
 
-    trainer = build_trainer_from_config(cfg, hooks=hooks)
+    if resume:
+        log.info("Resuming from checkpoint: %s", resume)
+
+    trainer = build_trainer_from_config(cfg, hooks=hooks, resume=resume)
     trainer.run()
     log.info("Model saved to %s", cfg.output_dir)
 
