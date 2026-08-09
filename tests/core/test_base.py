@@ -125,3 +125,5 @@ def test_model_without_io_type_raises_on_class_definition():
             def forward(self, batch): return {}
             def save(self, path): pass
             def load(self, path): pass
+            @property
+            def raw_model(self): return None

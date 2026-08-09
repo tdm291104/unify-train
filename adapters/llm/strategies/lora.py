@@ -39,20 +39,6 @@ class LoRAStrategy(BaseStrategy):
         out = model.forward(batch)
         return {"loss": out["loss"]}
 
-    def configure_scheduler(self, optimizer: Any, config: dict[str, Any]) -> Any | None:
-        name = config.get("scheduler")
-        if name == "cosine":
-            from torch.optim.lr_scheduler import CosineAnnealingLR
-            return CosineAnnealingLR(optimizer, T_max=int(config.get("t_max", 3)))
-        if name == "step":
-            from torch.optim.lr_scheduler import StepLR
-            return StepLR(
-                optimizer,
-                step_size=int(config.get("step_size", 1)),
-                gamma=float(config.get("gamma", 0.1)),
-            )
-        return None
-
     def teardown(self, model: BaseModel) -> None:
         merged = model.raw_model.merge_and_unload()
         model._model = merged

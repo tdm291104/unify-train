@@ -39,3 +39,8 @@ class BaseModel(ABC):
     @abstractmethod
     def load(self, path: str) -> None:
         """Load weights/adapters from disk."""
+
+    @property
+    @abstractmethod
+    def raw_model(self) -> Any:
+        """The underlying torch.nn.Module."""

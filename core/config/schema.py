@@ -20,6 +20,7 @@ class StrategyConfig(PydanticBase):
 
 class EvaluatorConfig(PydanticBase):
     name: str
+    params: dict[str, Any] = {}
 
 
 class IOTypeConfig(PydanticBase):
@@ -41,6 +42,7 @@ class TrainConfig(PydanticBase):
     fp16: bool = False
     bf16: bool = False
     max_grad_norm: float = 0.0
+    device: str = "cpu"
 
 
 class EvalConfig(PydanticBase):

@@ -15,6 +15,10 @@ class DPOStrategy(BaseStrategy):
 
     compatible_io_types = [TEXT_TO_TEXT]
 
+    def __init__(self) -> None:
+        self._ref_model = None
+        self._beta: float = 0.1
+
     def setup(self, model: BaseModel, config: dict[str, Any]) -> BaseModel:
         # Freeze a deep copy as the reference model before applying PEFT
         self._ref_model = copy.deepcopy(model.raw_model)
@@ -37,20 +41,6 @@ class DPOStrategy(BaseStrategy):
     def configure_optimizers(self, model: BaseModel, config: dict[str, Any]) -> AdamW:
         lr = float(config.get("lr", 1e-4))
         return AdamW(filter(lambda p: p.requires_grad, model.raw_model.parameters()), lr=lr)
-
-    def configure_scheduler(self, optimizer: Any, config: dict[str, Any]) -> Any | None:
-        name = config.get("scheduler")
-        if name == "cosine":
-            from torch.optim.lr_scheduler import CosineAnnealingLR
-            return CosineAnnealingLR(optimizer, T_max=int(config.get("t_max", 3)))
-        if name == "step":
-            from torch.optim.lr_scheduler import StepLR
-            return StepLR(
-                optimizer,
-                step_size=int(config.get("step_size", 1)),
-                gamma=float(config.get("gamma", 0.1)),
-            )
-        return None
 
     def _log_probs(self, model_out_logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         """Per-sample sum of log-probs for non-padding tokens."""

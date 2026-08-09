@@ -39,24 +39,36 @@ class Trainer:
             input=DataType(config.io_type.input),
             output=DataType(config.io_type.output),
         )
+        self._eval_loader = None
 
-    def _run_eval(self, model: BaseModel, epoch: int, ctx: HookContext) -> None:
+    @staticmethod
+    def _to_device(obj: Any, device: torch.device) -> Any:
+        if isinstance(obj, torch.Tensor):
+            return obj.to(device)
+        if isinstance(obj, dict):
+            return {k: Trainer._to_device(v, device) for k, v in obj.items()}
+        return obj
+
+    def _run_eval(self, model: BaseModel, epoch: int, ctx: HookContext, device: torch.device) -> None:
         if self._evaluator is None or self._eval_dataset is None:
             return
         if (epoch + 1) % self._config.eval.eval_every_n_epochs != 0:
             return
 
+        if self._eval_loader is None:
+            self._eval_loader = DataLoader(
+                self._eval_dataset,
+                batch_size=self._config.train.batch_size,
+                collate_fn=self._eval_dataset.collate_fn,
+                shuffle=False,
+            )
+
         model.raw_model.eval()
-        loader = DataLoader(
-            self._eval_dataset,
-            batch_size=self._config.train.batch_size,
-            collate_fn=self._eval_dataset.collate_fn,
-            shuffle=False,
-        )
         all_preds: list = []
         all_refs: list = []
         with torch.no_grad():
-            for batch in loader:
+            for batch in self._eval_loader:
+                batch = self._to_device(batch, device)
                 out = model.forward(batch)
                 preds, refs = self._evaluator.extract(out, batch)
                 all_preds.extend(preds)
@@ -105,12 +117,15 @@ class Trainer:
             shuffle=True,
         )
 
+        device = torch.device(cfg.train.device)
+        model.raw_model.to(device)
+
         accum_steps = max(1, cfg.train.gradient_accumulation_steps)
         use_fp16 = cfg.train.fp16
         use_amp = use_fp16 or cfg.train.bf16
         amp_dtype = torch.bfloat16 if cfg.train.bf16 else torch.float16
-        device_type = "cuda" if torch.cuda.is_available() else "cpu"
-        scaler = torch.amp.GradScaler("cuda", enabled=use_fp16)
+        device_type = device.type
+        scaler = torch.amp.GradScaler("cuda", enabled=use_fp16 and device.type == "cuda")
 
         ctx = HookContext(model=model, config=cfg)
         self._hooks.fire("before_train", ctx)
@@ -127,6 +142,7 @@ class Trainer:
                 pending_step = False
 
                 for batch_idx, batch in enumerate(loader):
+                    batch = self._to_device(batch, device)
                     with torch.autocast(device_type=device_type, dtype=amp_dtype, enabled=use_amp):
                         metrics = self._strategy.training_step(model, batch, global_step)
 
@@ -168,7 +184,7 @@ class Trainer:
                     self._hooks.fire("after_step", ctx)
 
                 self._hooks.fire("after_epoch", ctx)
-                self._run_eval(model, epoch, ctx)
+                self._run_eval(model, epoch, ctx, device)
                 if scheduler is not None:
                     scheduler.step()
         except StopTraining:

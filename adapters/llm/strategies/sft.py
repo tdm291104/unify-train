@@ -22,20 +22,6 @@ class SFTStrategy(BaseStrategy):
         weight_decay = float(config.get("weight_decay", 0.01))
         return AdamW(model.raw_model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    def configure_scheduler(self, optimizer: Any, config: dict[str, Any]) -> Any | None:
-        name = config.get("scheduler")
-        if name == "cosine":
-            from torch.optim.lr_scheduler import CosineAnnealingLR
-            return CosineAnnealingLR(optimizer, T_max=int(config.get("t_max", 3)))
-        if name == "step":
-            from torch.optim.lr_scheduler import StepLR
-            return StepLR(
-                optimizer,
-                step_size=int(config.get("step_size", 1)),
-                gamma=float(config.get("gamma", 0.1)),
-            )
-        return None
-
     def training_step(
         self,
         model: BaseModel,

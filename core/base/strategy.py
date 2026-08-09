@@ -31,7 +31,18 @@ class BaseStrategy(ABC):
         """Create and return the optimizer appropriate for this strategy."""
 
     def configure_scheduler(self, optimizer: Any, config: dict[str, Any]) -> Any | None:
-        """Optionally return an LR scheduler stepped after each epoch. Default: None."""
+        """Return an LR scheduler stepped after each epoch. Supports 'cosine' and 'step' out of the box."""
+        name = config.get("scheduler")
+        if name == "cosine":
+            from torch.optim.lr_scheduler import CosineAnnealingLR
+            return CosineAnnealingLR(optimizer, T_max=int(config.get("t_max", 3)))
+        if name == "step":
+            from torch.optim.lr_scheduler import StepLR
+            return StepLR(
+                optimizer,
+                step_size=int(config.get("step_size", 1)),
+                gamma=float(config.get("gamma", 0.1)),
+            )
         return None
 
     @abstractmethod
