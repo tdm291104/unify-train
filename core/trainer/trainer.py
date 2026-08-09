@@ -7,6 +7,7 @@ from core.base.evaluator import BaseEvaluator
 from core.base.io_types import IOType, DataType
 from core.config.schema import UnifyTrainConfig
 from core.hook.hooks import HookManager, HookContext
+from core.hook.early_stopping import StopTraining
 
 
 class Trainer:
@@ -50,26 +51,29 @@ class Trainer:
         self._hooks.fire("before_train", ctx)
 
         global_step = 0
-        for epoch in range(cfg.train.max_epochs):
-            ctx.epoch = epoch
-            self._hooks.fire("before_epoch", ctx)
+        try:
+            for epoch in range(cfg.train.max_epochs):
+                ctx.epoch = epoch
+                self._hooks.fire("before_epoch", ctx)
 
-            for batch in loader:
-                metrics = self._strategy.training_step(
-                    model, batch, optimizer, step=global_step
-                )
-                if "loss" not in metrics:
-                    raise ValueError(
-                        f"{type(self._strategy).__name__}.training_step must return a dict "
-                        f"with 'loss' key, got keys: {list(metrics)}"
+                for batch in loader:
+                    metrics = self._strategy.training_step(
+                        model, batch, optimizer, step=global_step
                     )
-                global_step += 1
-                ctx.step = global_step
-                ctx.loss = metrics["loss"]
-                ctx.metrics = metrics
-                self._hooks.fire("after_step", ctx)
+                    if "loss" not in metrics:
+                        raise ValueError(
+                            f"{type(self._strategy).__name__}.training_step must return a dict "
+                            f"with 'loss' key, got keys: {list(metrics)}"
+                        )
+                    global_step += 1
+                    ctx.step = global_step
+                    ctx.loss = metrics["loss"]
+                    ctx.metrics = metrics
+                    self._hooks.fire("after_step", ctx)
 
-            self._hooks.fire("after_epoch", ctx)
+                self._hooks.fire("after_epoch", ctx)
+        except StopTraining:
+            pass
 
         self._hooks.fire("after_train", ctx)
         self._strategy.teardown(model)
