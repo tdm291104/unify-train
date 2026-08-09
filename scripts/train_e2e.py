@@ -1,12 +1,13 @@
 """End-to-end training script for unify-train."""
 import argparse
 import logging
+import os
 
 import adapters.llm  # noqa: F401
 import adapters.vision  # noqa: F401
 
 from core.config.loader import load_config
-from core.hook.hooks import HookManager
+from core.hook import HookManager, CheckpointHook, CSVLoggerHook
 from core.trainer.trainer import build_trainer_from_config
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -40,6 +41,12 @@ def main() -> None:
     hooks.register("after_epoch", on_after_epoch)
     hooks.register("after_step", on_after_step)
     hooks.register("after_train", on_after_train)
+
+    checkpoint_dir = os.path.join(cfg.output_dir, "checkpoints")
+    hooks.register("after_epoch", CheckpointHook(checkpoint_dir, every=1))
+
+    log_path = os.path.join(cfg.output_dir, "train_log.csv")
+    hooks.register("after_step", CSVLoggerHook(log_path))
 
     trainer = build_trainer_from_config(cfg, hooks=hooks)
     trainer.run()
