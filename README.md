@@ -12,14 +12,27 @@ pip install -e ".[dev]"
 pip install -e ".[qlora]"             # QLoRA (4-bit quantization)
 pip install -e ".[generation-eval]"   # BLEU + ROUGE-L evaluator
 pip install -e ".[classification-eval]" # F1/precision/recall evaluator
+pip install -e ".[wandb]"             # WandB experiment tracking
 pip install -e ".[all-extras]"        # All of the above
 ```
 
 ## Usage
 
 ```bash
+# Train
 unify-train train --config configs/my_run.yaml
 unify-train train --config configs/my_run.yaml --resume outputs/checkpoint.pt
+
+# Train with WandB logging (requires .[wandb])
+unify-train train --config configs/my_run.yaml --wandb-project my-project --wandb-run run-1
+
+# Run inference on a trained model
+unify-train infer --config configs/my_run.yaml --prompt "What is the capital of France?"
+unify-train infer --config configs/my_run.yaml --prompt "Hello" --max-new-tokens 100 --temperature 0.8
+unify-train infer --config configs/my_run.yaml --prompt "Hello" --checkpoint outputs/checkpoints/epoch_2
+
+# List all registered adapters
+unify-train list-adapters
 ```
 
 ### Example config — LLaMA + QLoRA + instruction data
@@ -126,6 +139,7 @@ output_dir: outputs/gpt2-lora
 | `instruction` | Alpaca and ShareGPT formats. Auto-detects format if not specified |
 | `generation` | BLEU + ROUGE-L. Requires `.[generation-eval]` |
 | `classification` | F1, precision, recall, exact-match. Requires `.[classification-eval]` |
+| WandB hook | `WandbLoggerHook` — logs `train/` and `eval/` metrics. Requires `.[wandb]` |
 
 ## Extending
 
