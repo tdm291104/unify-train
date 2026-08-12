@@ -1,5 +1,5 @@
 model:
-  name: distilgpt2
+  name: hf_causal_lm
   params:
     pretrained: distilgpt2
 

@@ -34,7 +34,7 @@ def test_list_adapters_shows_all_sections():
 def test_list_adapters_shows_registered_names():
     result = CliRunner().invoke(main, ["list-adapters"])
     assert result.exit_code == 0
-    assert "distilgpt2" in result.output
+    assert "hf_causal_lm" in result.output
     assert "resnet18" in result.output
     assert "lora" in result.output
     assert "supervised" in result.output
@@ -54,7 +54,7 @@ def _write_config(tmp_path, outdir=None):
     cfg = tmp_path / "test.yaml"
     cfg.write_text(f"""
 model:
-  name: distilgpt2
+  name: hf_causal_lm
 dataset:
   name: text_clm
   params:

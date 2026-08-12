@@ -124,7 +124,7 @@ output_dir: outputs/gpt2-lora
 
 | Type | Available |
 |---|---|
-| Models | `hf_causal_lm`, `distilgpt2`, `resnet18` |
+| Models | `hf_causal_lm`, `resnet18` |
 | Strategies | `lora`, `qlora`, `sft`, `ia3`, `dpo`, `orpo`, `supervised` |
 | Datasets | `instruction`, `text_clm`, `hf_text`, `hf_dpo`, `synthetic_image` |
 | Evaluators | `generation`, `classification`, `perplexity`, `accuracy` |

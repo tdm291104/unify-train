@@ -37,7 +37,7 @@ def test_perplexity_compute_known_value():
 def test_llm_init_registers_all():
     import adapters.llm
     from core.registry import MODELS, DATASETS, STRATEGIES, EVALUATORS
-    assert "distilgpt2" in MODELS.list_all()
+    assert "hf_causal_lm" in MODELS.list_all()
     assert "text_clm" in DATASETS.list_all()
     assert "lora" in STRATEGIES.list_all()
     assert "perplexity" in EVALUATORS.list_all()

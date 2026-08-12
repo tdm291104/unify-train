@@ -1,6 +1,9 @@
+import logging
 import os
 from typing import Any
 import torch
+
+log = logging.getLogger(__name__)
 from torch.utils.data import DataLoader
 from core.base.model import BaseModel
 from core.base.dataset import BaseDataset
@@ -107,6 +110,14 @@ class Trainer:
         self._strategy.validate(self._io_type, cfg.task)
 
         model = self._strategy.setup(self._model, cfg.strategy.params)
+
+        total = sum(p.numel() for p in model.raw_model.parameters())
+        trainable = sum(p.numel() for p in model.raw_model.parameters() if p.requires_grad)
+        log.info(
+            "Parameters: %s total | %s trainable (%.2f%%)",
+            f"{total:,}", f"{trainable:,}", 100 * trainable / total if total else 0.0,
+        )
+
         optimizer = self._strategy.configure_optimizers(model, cfg.strategy.params)
         scheduler = self._strategy.configure_scheduler(optimizer, cfg.strategy.params)
 

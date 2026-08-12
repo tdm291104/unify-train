@@ -1,4 +1,3 @@
-import adapters.llm.models.distilgpt2  # noqa: F401
 import adapters.llm.models.hf_causal_lm  # noqa: F401
 import adapters.llm.datasets.text_clm  # noqa: F401
 import adapters.llm.datasets.hf_text  # noqa: F401
