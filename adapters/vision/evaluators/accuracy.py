@@ -9,6 +9,9 @@ class AccuracyEvaluator(BaseEvaluator):
 
     io_type = IMAGE_TO_CATEGORY
 
+    def __init__(self, params=None) -> None:
+        pass
+
     def extract(
         self,
         model_output: dict[str, Any],

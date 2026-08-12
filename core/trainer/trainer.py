@@ -227,7 +227,7 @@ def build_trainer_from_config(
     evaluator = None
     if config.evaluator:
         evaluator_cls = EVALUATORS.get(config.evaluator.name)
-        evaluator = evaluator_cls()
+        evaluator = evaluator_cls(config.evaluator.params)
 
     eval_dataset = None
     if config.eval_dataset:

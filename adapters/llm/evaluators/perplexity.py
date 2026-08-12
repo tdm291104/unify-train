@@ -10,6 +10,9 @@ class PerplexityEvaluator(BaseEvaluator):
 
     io_type = TEXT_TO_TEXT
 
+    def __init__(self, params=None) -> None:
+        pass
+
     def extract(
         self,
         model_output: dict[str, Any],

@@ -260,3 +260,51 @@ def test_build_trainer_from_config_builds_eval_dataset(tmp_path):
 
     assert trainer._evaluator is mock_evaluator
     assert trainer._eval_dataset is mock_eval_dataset
+
+
+def test_evaluator_receives_params(tmp_path):
+    """Evaluator constructor must receive config.evaluator.params."""
+    received = {}
+
+    from core.base.io_types import TEXT_TO_TEXT
+
+    class ParamCapturingEvaluator:
+        io_type = TEXT_TO_TEXT
+
+        def __init__(self, params):
+            received["params"] = params
+
+        def extract(self, out, batch):
+            return [], []
+
+        def compute(self, preds, refs):
+            return {}
+
+    from core.registry import EVALUATORS
+    from core.config.schema import UnifyTrainConfig
+    from core.trainer.trainer import build_trainer_from_config
+
+    EVALUATORS._registry["_capture"] = ParamCapturingEvaluator
+
+    cfg = UnifyTrainConfig(
+        model={"name": "_m"},
+        dataset={"name": "_d"},
+        strategy={"name": "_s"},
+        evaluator={"name": "_capture", "params": {"foo": "bar"}},
+        io_type={"input": "text", "output": "text"},
+    )
+
+    mock_model = MagicMock()
+    mock_dataset = MagicMock()
+    mock_strategy = MagicMock()
+
+    with patch("core.registry.MODELS") as MockMODELS, \
+         patch("core.registry.DATASETS") as MockDATASETS, \
+         patch("core.registry.STRATEGIES") as MockSTRATEGIES:
+        MockMODELS.get.return_value = MagicMock(return_value=mock_model)
+        MockDATASETS.get.return_value = MagicMock(return_value=mock_dataset)
+        MockSTRATEGIES.get.return_value = MagicMock(return_value=mock_strategy)
+        build_trainer_from_config(cfg)
+
+    assert received.get("params") == {"foo": "bar"}
+    del EVALUATORS._registry["_capture"]
