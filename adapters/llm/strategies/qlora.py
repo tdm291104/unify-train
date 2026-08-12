@@ -11,7 +11,7 @@ class QLoRAStrategy(LoRAStrategy):
     def setup(self, model: BaseModel, config: dict[str, Any]) -> BaseModel:
         try:
             prepare_model_for_kbit_training(model.raw_model)
-        except Exception as exc:
+        except ImportError as exc:
             if "bitsandbytes" in str(exc).lower():
                 raise ImportError(
                     "QLoRA requires bitsandbytes: pip install bitsandbytes"

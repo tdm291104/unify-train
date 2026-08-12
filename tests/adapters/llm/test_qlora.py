@@ -47,7 +47,7 @@ def test_setup_missing_bitsandbytes_raises():
 
     with patch("adapters.llm.strategies.qlora.prepare_model_for_kbit_training",
                side_effect=ImportError("bitsandbytes")):
-        with pytest.raises(ImportError, match="bitsandbytes"):
+        with pytest.raises(ImportError, match="QLoRA requires bitsandbytes"):
             QLoRAStrategy().setup(mock_model, {})
 
 
