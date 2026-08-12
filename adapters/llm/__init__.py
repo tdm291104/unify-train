@@ -1,9 +1,15 @@
 import adapters.llm.models.distilgpt2  # noqa: F401
+import adapters.llm.models.hf_causal_lm  # noqa: F401
 import adapters.llm.datasets.text_clm  # noqa: F401
 import adapters.llm.datasets.hf_text  # noqa: F401
+import adapters.llm.datasets.hf_dpo  # noqa: F401
+import adapters.llm.datasets.instruction  # noqa: F401
 import adapters.llm.strategies.lora  # noqa: F401
 import adapters.llm.strategies.sft  # noqa: F401
 import adapters.llm.strategies.ia3  # noqa: F401
 import adapters.llm.strategies.dpo  # noqa: F401
-import adapters.llm.datasets.hf_dpo  # noqa: F401
+import adapters.llm.strategies.qlora  # noqa: F401
+import adapters.llm.strategies.orpo  # noqa: F401
 import adapters.llm.evaluators.perplexity  # noqa: F401
+import adapters.llm.evaluators.generation  # noqa: F401
+import adapters.llm.evaluators.classification  # noqa: F401

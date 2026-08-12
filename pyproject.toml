@@ -25,6 +25,22 @@ dev = [
     "pytest>=7.0",
     "pytest-mock>=3.0",
 ]
+qlora = [
+    "bitsandbytes>=0.43",
+]
+generation-eval = [
+    "sacrebleu>=2.0",
+    "rouge-score>=0.1",
+]
+classification-eval = [
+    "scikit-learn>=1.0",
+]
+all-extras = [
+    "bitsandbytes>=0.43",
+    "sacrebleu>=2.0",
+    "rouge-score>=0.1",
+    "scikit-learn>=1.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
