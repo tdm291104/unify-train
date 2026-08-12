@@ -50,6 +50,9 @@ class HFCausalLMModel(BaseModel):
     def raw_model(self) -> Any:
         return self._model
 
+    def generate(self, input_ids, **kwargs):
+        return self._model.generate(input_ids, **kwargs)
+
     @property
     def tokenizer(self) -> Any:
         return self._tokenizer

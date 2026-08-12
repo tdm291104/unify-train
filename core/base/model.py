@@ -44,3 +44,10 @@ class BaseModel(ABC):
     @abstractmethod
     def raw_model(self) -> Any:
         """The underlying torch.nn.Module."""
+
+    def generate(self, input_ids, **kwargs):
+        """Run generation (optional). Override in models that support it."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement generate(). "
+            "Use a model that supports text generation (e.g. hf_causal_lm)."
+        )

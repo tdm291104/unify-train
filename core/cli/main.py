@@ -97,6 +97,58 @@ def train(
     log.info("Model saved to %s", cfg.output_dir)
 
 
+@main.command()
+@click.argument("config", type=click.Path(exists=True, dir_okay=False))
+@click.option("--prompt", required=True, help="Input text prompt.")
+@click.option("--max-new-tokens", default=200, show_default=True, help="Maximum tokens to generate.")
+@click.option("--temperature", default=1.0, show_default=True, help="Sampling temperature (1.0 = greedy-ish).")
+@click.option("--checkpoint", default=None, type=click.Path(exists=True, file_okay=False),
+              help="Load weights from this checkpoint dir instead of output_dir.")
+def infer(config: str, prompt: str, max_new_tokens: int, temperature: float, checkpoint: str | None) -> None:
+    """Run inference using a trained model."""
+    import adapters.llm  # noqa: F401
+    import adapters.vision  # noqa: F401
+    from core.config.loader import load_config
+    from core.registry import MODELS
+
+    cfg = load_config(config)
+    model_dir = checkpoint or cfg.output_dir
+
+    model_cls = MODELS.get(cfg.model.name)
+    model = model_cls()
+    model.build(cfg.model.params)
+    model.load(model_dir)
+
+    # Tokenize the prompt using the model's tokenizer (if available)
+    if not hasattr(model, "tokenizer") or model.tokenizer is None:
+        raise click.ClickException(
+            f"Model '{cfg.model.name}' does not expose a tokenizer. "
+            "Inference requires a model with a tokenizer property (e.g. hf_causal_lm)."
+        )
+
+    tokenizer = model.tokenizer
+    inputs = tokenizer(prompt, return_tensors="pt")
+    input_ids = inputs["input_ids"]
+
+    # Move to CPU (inference CLI doesn't assume CUDA)
+    model.raw_model.eval()
+
+    import torch
+    with torch.no_grad():
+        output_ids = model.generate(
+            input_ids,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            do_sample=temperature != 1.0,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+
+    # Decode only the newly generated tokens (skip the prompt)
+    generated = output_ids[0][input_ids.shape[-1]:]
+    result = tokenizer.decode(generated, skip_special_tokens=True)
+    click.echo(result)
+
+
 @main.command("list-adapters")
 def list_adapters() -> None:
     """List all registered models, datasets, strategies, and evaluators."""
