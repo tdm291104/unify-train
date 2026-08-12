@@ -45,7 +45,7 @@ class BaseModel(ABC):
     def raw_model(self) -> Any:
         """The underlying torch.nn.Module."""
 
-    def generate(self, input_ids, **kwargs):
+    def generate(self, input_ids: Any, **kwargs: Any) -> Any:
         """Run generation (optional). Override in models that support it."""
         raise NotImplementedError(
             f"{type(self).__name__} does not implement generate(). "

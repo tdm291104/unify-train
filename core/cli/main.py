@@ -81,7 +81,7 @@ def train(
         }
         wandb_hook = WandbLoggerHook(
             project=wandb_project,
-            run_name=wandb_run or None,
+            run_name=wandb_run,
             config=wandb_cfg,
         )
         hooks.register("before_train", wandb_hook.on_before_train)
@@ -111,8 +111,17 @@ def infer(config: str, prompt: str, max_new_tokens: int, temperature: float, che
     from core.config.loader import load_config
     from core.registry import MODELS
 
+    if temperature <= 0.0:
+        raise click.ClickException("--temperature must be > 0.0")
+
     cfg = load_config(config)
     model_dir = checkpoint or cfg.output_dir
+
+    if not os.path.isdir(model_dir):
+        raise click.ClickException(
+            f"Model directory '{model_dir}' does not exist. "
+            "Train the model first or pass --checkpoint."
+        )
 
     model_cls = MODELS.get(cfg.model.name)
     model = model_cls()

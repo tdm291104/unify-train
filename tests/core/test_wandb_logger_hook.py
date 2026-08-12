@@ -40,7 +40,7 @@ def test_on_after_step_logs_loss():
         hook.on_before_train(ctx)
         hook.on_after_step(ctx)
         mock_wandb.log.assert_called_once_with(
-            {"train/loss": 0.5, "step": 10},
+            {"train/loss": 0.5},
             step=10,
         )
 
@@ -74,7 +74,7 @@ def test_on_after_eval_logs_eval_metrics():
         hook.on_before_train(ctx)
         hook.on_after_eval(ctx)
         mock_wandb.log.assert_called_once_with(
-            {"eval/bleu": 45.2, "step": 20},
+            {"eval/bleu": 45.2},
             step=20,
         )
 

@@ -33,7 +33,7 @@ class WandbLoggerHook:
     def on_after_step(self, ctx: HookContext) -> None:
         if self._wandb is None:
             return
-        payload = {"train/loss": ctx.loss, "step": ctx.step}
+        payload = {"train/loss": ctx.loss}
         for k, v in ctx.metrics.items():
             if k != "loss":
                 payload[f"train/{k}"] = v
@@ -43,7 +43,6 @@ class WandbLoggerHook:
         if self._wandb is None:
             return
         payload = {f"eval/{k}": v for k, v in ctx.metrics.items()}
-        payload["step"] = ctx.step
         self._wandb.log(payload, step=ctx.step)
 
     def on_after_train(self, ctx: HookContext) -> None:
