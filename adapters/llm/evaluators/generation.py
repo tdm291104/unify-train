@@ -1,4 +1,3 @@
-import torch
 from typing import Any
 from core.base.evaluator import BaseEvaluator
 from core.base.io_types import TEXT_TO_TEXT
@@ -23,12 +22,12 @@ class GenerationEvaluator(BaseEvaluator):
         pred_ids = logits.argmax(dim=-1)      # [B, T]
         labels = batch["labels"]              # [B, T]
 
-        preds = pred_ids.tolist()
-
-        # Replace -100 (ignore-index) with 0 defensively
-        refs = labels.clone()
-        refs[refs == -100] = 0
-        refs = refs.tolist()
+        # Keep only response positions (where labels != -100) for meaningful metrics
+        preds, refs = [], []
+        for pred_row, label_row in zip(pred_ids, labels):
+            mask = label_row != -100
+            preds.append(pred_row[mask].tolist())
+            refs.append(label_row[mask].tolist())
 
         return preds, refs
 

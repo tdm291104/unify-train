@@ -48,17 +48,16 @@ class TestExtract:
         preds, refs = ev.extract({"logits": logits}, {"labels": labels})
         assert preds[0][0] == 3
 
-    def test_extract_labels_minus100_replaced(self):
+    def test_extract_minus100_positions_filtered(self):
         ev = GenerationEvaluator()
         logits = torch.zeros(2, 3, 5)
         labels = torch.tensor([[-100, 1, 2], [3, -100, 5]])
         preds, refs = ev.extract({"logits": logits}, {"labels": labels})
-        # -100 positions should become 0
-        assert refs[0][0] == 0
-        assert refs[1][1] == 0
-        # Non-masked positions should remain
-        assert refs[0][1] == 1
-        assert refs[1][0] == 3
+        # -100 positions are filtered out; only response tokens remain
+        assert refs[0] == [1, 2]     # first sample: position 0 was prompt (-100)
+        assert refs[1] == [3, 5]     # second sample: position 1 was prompt (-100)
+        assert len(preds[0]) == 2    # preds aligned with refs
+        assert len(preds[1]) == 2
 
 
 class TestCompute:

@@ -43,6 +43,23 @@ class TestExtract:
         preds, refs = ev.extract({"logits": logits}, {"labels": labels})
         assert all(p == 2 for p in preds)
 
+    def test_extract_3d_logits(self):
+        ev = ClassificationEvaluator()
+        # Causal LM logits [B=2, T=4, V=5] — last position has max at class 3
+        logits = torch.zeros(2, 4, 5)
+        logits[:, -1, 3] = 10.0
+        labels = torch.zeros(2, dtype=torch.long)
+        preds, refs = ev.extract({"logits": logits}, {"labels": labels})
+        assert preds == [3, 3]
+
+    def test_extract_2d_labels_takes_last_valid(self):
+        ev = ClassificationEvaluator()
+        logits = torch.zeros(2, 5)
+        # 2D labels: -100 for prompt, actual class at last position
+        labels = torch.tensor([[-100, -100, 4], [-100, 2, -100]])
+        preds, refs = ev.extract({"logits": logits}, {"labels": labels})
+        assert refs == [4, 2]
+
 
 class TestCompute:
     def _mock_sklearn(self, prec=1.0, rec=1.0, f1=1.0):

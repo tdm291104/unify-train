@@ -20,8 +20,23 @@ class ClassificationEvaluator(BaseEvaluator):
         model_output: dict[str, Any],
         batch: dict[str, Any],
     ) -> tuple[list[int], list[int]]:
-        preds = model_output["logits"].argmax(dim=-1).tolist()
-        refs = batch["labels"].tolist()
+        logits = model_output["logits"]
+        labels = batch["labels"]
+
+        # For causal LM logits [B, T, V], use last-position logits as class scores
+        if logits.dim() == 3:
+            logits = logits[:, -1, :]  # [B, V]
+        preds = logits.argmax(dim=-1).tolist()
+
+        # For sequence labels [B, T], take the last non-masked label per sample
+        if labels.dim() == 2:
+            refs = []
+            for row in labels:
+                valid = row[row != -100]
+                refs.append(valid[-1].item() if valid.numel() > 0 else 0)
+        else:
+            refs = labels.tolist()
+
         return preds, refs
 
     def compute(

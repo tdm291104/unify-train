@@ -22,9 +22,13 @@ class InstructionDataset(BaseDataset):
         self._max_length: int = params.get("max_length", 512)
         fmt: str | None = params.get("format")
 
-        if path.endswith(".json") or path.endswith(".jsonl"):
+        if path.endswith(".jsonl"):
             with open(path) as f:
                 self._data = [json.loads(line) for line in f if line.strip()]
+        elif path.endswith(".json"):
+            with open(path) as f:
+                data = json.load(f)
+                self._data = data if isinstance(data, list) else [data]
         else:
             from datasets import load_dataset
             ds = load_dataset(path, split=params.get("split", "train"))
