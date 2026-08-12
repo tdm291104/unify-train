@@ -10,7 +10,7 @@ class AccuracyEvaluator(BaseEvaluator):
     io_type = IMAGE_TO_CATEGORY
 
     def __init__(self, params=None) -> None:
-        pass
+        pass  # no configurable params
 
     def extract(
         self,

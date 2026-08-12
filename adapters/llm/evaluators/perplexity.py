@@ -11,7 +11,7 @@ class PerplexityEvaluator(BaseEvaluator):
     io_type = TEXT_TO_TEXT
 
     def __init__(self, params=None) -> None:
-        pass
+        pass  # no configurable params
 
     def extract(
         self,

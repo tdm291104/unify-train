@@ -24,6 +24,9 @@ class BaseEvaluator(ABC):
                 f"{cls.__name__} must define class attribute 'io_type: ClassVar[IOType]'"
             )
 
+    def __init__(self, params: dict | None = None) -> None:
+        pass
+
     @abstractmethod
     def extract(
         self,

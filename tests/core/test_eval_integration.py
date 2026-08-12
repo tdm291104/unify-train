@@ -298,13 +298,14 @@ def test_evaluator_receives_params(tmp_path):
     mock_dataset = MagicMock()
     mock_strategy = MagicMock()
 
-    with patch("core.registry.MODELS") as MockMODELS, \
-         patch("core.registry.DATASETS") as MockDATASETS, \
-         patch("core.registry.STRATEGIES") as MockSTRATEGIES:
-        MockMODELS.get.return_value = MagicMock(return_value=mock_model)
-        MockDATASETS.get.return_value = MagicMock(return_value=mock_dataset)
-        MockSTRATEGIES.get.return_value = MagicMock(return_value=mock_strategy)
-        build_trainer_from_config(cfg)
-
-    assert received.get("params") == {"foo": "bar"}
-    del EVALUATORS._registry["_capture"]
+    try:
+        with patch("core.registry.MODELS") as MockMODELS, \
+             patch("core.registry.DATASETS") as MockDATASETS, \
+             patch("core.registry.STRATEGIES") as MockSTRATEGIES:
+            MockMODELS.get.return_value = MagicMock(return_value=mock_model)
+            MockDATASETS.get.return_value = MagicMock(return_value=mock_dataset)
+            MockSTRATEGIES.get.return_value = MagicMock(return_value=mock_strategy)
+            build_trainer_from_config(cfg)
+        assert received.get("params") == {"foo": "bar"}
+    finally:
+        del EVALUATORS._registry["_capture"]
