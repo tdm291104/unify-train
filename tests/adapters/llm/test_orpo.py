@@ -1,6 +1,4 @@
-import pytest
 import torch
-import torch.nn.functional as F
 from unittest.mock import MagicMock
 
 
@@ -17,9 +15,11 @@ def _make_labels(B=2, T=5, token=1):
 def _make_batch(B=2, T=5, V=8):
     ids = torch.ones(B, T, dtype=torch.long)
     mask = torch.ones(B, T, dtype=torch.long)
-    labels = _make_labels(B, T)
-    seq = {"input_ids": ids, "attention_mask": mask, "labels": labels}
-    return {"chosen": seq, "rejected": seq}
+    chosen_labels = _make_labels(B, T, token=1)    # preferred response token=1
+    rejected_labels = _make_labels(B, T, token=2)  # rejected response token=2
+    chosen = {"input_ids": ids, "attention_mask": mask, "labels": chosen_labels}
+    rejected = {"input_ids": ids, "attention_mask": mask, "labels": rejected_labels}
+    return {"chosen": chosen, "rejected": rejected}
 
 
 def test_registers():
@@ -71,6 +71,8 @@ def test_training_step_returns_loss_tensor():
     assert result["loss"].requires_grad
     assert "sft_loss" in result
     assert "or_loss" in result
+    assert isinstance(result["sft_loss"], float)
+    assert isinstance(result["or_loss"], float)
 
 
 def test_training_step_calls_model_twice():
