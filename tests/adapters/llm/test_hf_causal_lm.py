@@ -1,4 +1,3 @@
-import pytest
 import torch
 from unittest.mock import MagicMock, patch
 
@@ -68,6 +67,8 @@ def test_forward_returns_loss_and_logits():
     out = m.forward(batch)
     assert "loss" in out
     assert "logits" in out
+    assert out["loss"] is mock_raw.return_value.loss
+    assert out["logits"] is mock_raw.return_value.logits
 
 
 def test_raw_model_property():
@@ -95,3 +96,36 @@ def test_save_calls_save_pretrained(tmp_path):
     m.save(str(tmp_path))
     mock_raw.save_pretrained.assert_called_once_with(str(tmp_path))
     tok.save_pretrained.assert_called_once_with(str(tmp_path))
+
+
+def test_load_calls_from_pretrained():
+    from adapters.llm.models.hf_causal_lm import HFCausalLMModel
+    mock_raw = MagicMock()
+    tok = _mock_tokenizer()
+    with patch("adapters.llm.models.hf_causal_lm.AutoModelForCausalLM") as MockModel:
+        with patch("adapters.llm.models.hf_causal_lm.AutoTokenizer") as MockTok:
+            MockModel.from_pretrained.return_value = mock_raw
+            MockTok.from_pretrained.return_value = tok
+            m = HFCausalLMModel()
+            m.load("/some/path")
+    MockModel.from_pretrained.assert_called_once_with("/some/path")
+    MockTok.from_pretrained.assert_called_once_with("/some/path")
+    assert tok.pad_token == tok.eos_token
+
+
+def test_tokenizer_property():
+    from adapters.llm.models.hf_causal_lm import HFCausalLMModel
+    tok = _mock_tokenizer()
+    with patch("adapters.llm.models.hf_causal_lm.AutoModelForCausalLM") as MockModel:
+        with patch("adapters.llm.models.hf_causal_lm.AutoTokenizer") as MockTok:
+            MockModel.from_pretrained.return_value = MagicMock()
+            MockTok.from_pretrained.return_value = tok
+            m = HFCausalLMModel()
+            m.build({"pretrained": "gpt2"})
+    assert m.tokenizer is tok
+
+
+def test_io_type():
+    from adapters.llm.models.hf_causal_lm import HFCausalLMModel
+    from core.base.io_types import TEXT_TO_TEXT
+    assert HFCausalLMModel.io_type == TEXT_TO_TEXT
