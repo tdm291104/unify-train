@@ -35,11 +35,15 @@ generation-eval = [
 classification-eval = [
     "scikit-learn>=1.0",
 ]
+wandb = [
+    "wandb>=0.17",
+]
 all-extras = [
     "bitsandbytes>=0.43",
     "sacrebleu>=2.0",
     "rouge-score>=0.1",
     "scikit-learn>=1.0",
+    "wandb>=0.17",
 ]
 
 [tool.pytest.ini_options]

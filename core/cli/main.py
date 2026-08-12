@@ -23,6 +23,10 @@ def main() -> None:
               help="Minimum loss improvement to count as progress.")
 @click.option("--resume", default=None, type=click.Path(exists=True, file_okay=False),
               help="Resume from a checkpoint directory.")
+@click.option("--wandb-project", default=None, type=str,
+              help="Log to W&B project (requires wandb installed).")
+@click.option("--wandb-run", default=None, type=str,
+              help="W&B run name (optional, defaults to W&B auto-name).")
 def train(
     config: str,
     checkpoint_every: int,
@@ -30,6 +34,8 @@ def train(
     early_stopping_patience: int,
     early_stopping_delta: float,
     resume: str | None,
+    wandb_project: str | None,
+    wandb_run: str | None,
 ) -> None:
     """Run training from a YAML config file."""
     import adapters.llm  # noqa: F401
@@ -62,6 +68,26 @@ def train(
             patience=early_stopping_patience,
             min_delta=early_stopping_delta,
         ))
+
+    if wandb_project:
+        from core.hook import WandbLoggerHook
+        wandb_cfg = {
+            "model": cfg.model.name,
+            "strategy": cfg.strategy.name,
+            "dataset": cfg.dataset.name,
+            "max_epochs": cfg.train.max_epochs,
+            "batch_size": cfg.train.batch_size,
+            "lr": cfg.strategy.params.get("lr"),
+        }
+        wandb_hook = WandbLoggerHook(
+            project=wandb_project,
+            run_name=wandb_run or None,
+            config=wandb_cfg,
+        )
+        hooks.register("before_train", wandb_hook.on_before_train)
+        hooks.register("after_step", wandb_hook.on_after_step)
+        hooks.register("after_eval", wandb_hook.on_after_eval)
+        hooks.register("after_train", wandb_hook.on_after_train)
 
     if resume:
         log.info("Resuming from checkpoint: %s", resume)
